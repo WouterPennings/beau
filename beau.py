@@ -1,7 +1,7 @@
 import sys
-from tokens import *
 from dataclasses import dataclass
 from enum import Enum, auto
+import webbrowser
 
 class ValueType(Enum):
     String = auto()
@@ -224,9 +224,14 @@ def main(filename: str):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("[ERROR] You did not supply enough arguments")
-        print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>.beau script'")
     elif len(sys.argv) > 2:
         print("[ERROR] You supplied too many arguments")
-        print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>.beau script'")
+        webbrowser.open("https://stackoverflow.com/search?q=spaces+in+path&s=00765823-f25b-46bf-a749-53aed287d501")
     else:
+        filename = sys.argv[1]
+        if filename.split('.')[-1] != "beau script":
+            print("[ERROR] File should end with '.beau script'")
+            quit()
         main(sys.argv[1])
