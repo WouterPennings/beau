@@ -116,12 +116,18 @@ def parse_beau(syntax_tokens):
             case SyntaxTokenTypes.AngleBracketLeft:
                 i += 1
                 tag = syntax_tokens[i]
+                is_closing = tag.type == SyntaxTokenTypes.Slash;
+                if is_closing:
+                    i += 1
+                    tag = syntax_tokens[i]
                 if tag.type != SyntaxTokenTypes.Var and tag.type != SyntaxTokenTypes.Word:
                     print(tag.type)
                     print("[ERROR] Next type should be a tag")
                     quit()
                 i += 1
                 if tag.type == SyntaxTokenTypes.Var:
+                    if is_closing:
+                        print("[ERROR] Variable declaration tag cannot be a closing one")
                     x = syntax_tokens[i]
                     if x.type is not SyntaxTokenTypes.Word and x.literal != "name":
                         print("[ERROR] Next token should be name")
@@ -174,16 +180,27 @@ def parse_beau(syntax_tokens):
                         print("[ERROR] Expected a '>'")
                         quit()
 
-                    tokens.append(Token(VariableAssign(name.literal, value.literal)))                 
+                    tokens.append(Token(VariableAssign(name.literal, value.literal))) 
+                else:
+                    tag = syntax_tokens[i - 1].literal    
+                    if syntax_tokens[i].type is not SyntaxTokenTypes.AngleBracketRight:
+                        print("[ERROR] Expected a '>'")
+                        quit()
+                    if is_closing:
+                        tokens.append(Token(Tag(TagType.HeaderOne, 1)))
+                    else:
+                        tokens.append(Token(Tag(TagType.HeaderOne, 0)))
+            case SyntaxTokenTypes.Word:
+                tokens.append(Token(Value(syntax_tokens[i].literal, ValueType.String)))
         i += 1
     
     return tokens
 
 def main():
-    input = "<var name=\"x\" value=\"1234\"/>"
+    input = "<var name=\"x\" value=\"1234\"/><h1>hello</h1>"
     syntax_tokens = tokenize_beau(input)
     tags = parse_beau(syntax_tokens)
-    
+
     # tokens.append(Token(Tag(TagType.Div, 0)))
     # tokens.append(Token(Tag(TagType.Paragraph, 0)))
     # tokens.append(Token(Value("Hello", ValueType.String)))
