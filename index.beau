@@ -1,0 +1,5 @@
+<p>Hello</p>
+<var name="x" value="3"/>
+<if con="x = 3">
+    <h1><tag var="x"></h1>
+</if>
