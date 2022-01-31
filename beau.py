@@ -224,14 +224,14 @@ def main(filename: str):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("[ERROR] You did not supply enough arguments")
-        print("[INFO] To execute type: 'py ./beau.py <FILENAME>.beau script'")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>. beau'")
     elif len(sys.argv) > 2:
         print("[ERROR] You supplied too many arguments")
-        print("[INFO] To execute type: 'py ./beau.py <FILENAME>.beau script'")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>. beau'")
         webbrowser.open("https://stackoverflow.com/search?q=spaces+in+path&s=00765823-f25b-46bf-a749-53aed287d501")
     else:
         filename = sys.argv[1]
         if filename.split('.')[-1] != "beau script":
-            print("[ERROR] File should end with '.beau script'")
+            print("[ERROR] File should end with '. beau'")
             quit()
         main(sys.argv[1])
