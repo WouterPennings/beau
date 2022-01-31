@@ -1,10 +1,34 @@
 import sys
 from tokens import *
+from dataclasses import dataclass
+from enum import Enum, auto
 
-def save_file(name, content):
-    f = open(name, "w")
-    f.write(content)
-    f.close()
+class ValueType(Enum):
+    String = auto()
+    Integer = auto()
+
+@dataclass
+class NativeTag:
+    tag: str
+    type: int # 0 = Start, 1 = End, 2 = Void
+
+@dataclass
+class Value:
+    value: str
+    type: ValueType
+
+@dataclass
+class VariableIndex:
+    identifier: str
+
+@dataclass
+class VariableAssign:
+    identifier: str   
+    value: str 
+
+@dataclass
+class Token:
+    tag: any
 
 def compile_to_html(tokens):
     variables = {}
@@ -181,6 +205,11 @@ def parse_beau(syntax_tokens):
         i += 1
     
     return tokens
+
+def save_file(name, content):
+    f = open(name, "w")
+    f.write(content)
+    f.close()
 
 def main(filename: str):
     with open(filename, 'r') as file:
