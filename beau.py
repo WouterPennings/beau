@@ -12,35 +12,8 @@ def compile_to_html(tokens):
     for token in tokens:
         if type(token.tag) == NativeTag:
             t = token.tag
-
             if t.type == 0: html += "<{}>".format(t.tag)
             else: html += "</{}>".format(t.tag)
-            
-            # match t.tag:
-            #     case TagType.Paragraph:
-            #         if t.type == 0: html += "<p>"
-            #         else: html += "</p>"
-            #     case TagType.HeaderOne:
-            #         if t.type == 0: html += "<h1>"
-            #         else: html += "</h1>"
-            #     case TagType.HeaderTwo:
-            #         if t.type == 0: html += "<h2>"
-            #         else: html += "</h2>"                    
-            #     case TagType.HeaderThree:
-            #         if t.type == 0: html += "<h3>"
-            #         else: html += "</h3>"
-            #     case TagType.HeaderFour:
-            #         if t.type == 0: html += "<h4>"
-            #         else: html += "</h4>"
-            #     case TagType.HeaderFive:
-            #         if t.type == 0: html += "<h5>"
-            #         else: html += "</h5>"   
-            #     case TagType.Div:
-            #         if t.type == 0: html += "<div>"
-            #         else: html += "</div>"
-            #     case TagType.Break:
-            #         html += "</br>"
-
         elif type(token.tag) == Value:
             html += token.tag.value
         elif type(token.tag) == VariableAssign:
@@ -52,7 +25,6 @@ def compile_to_html(tokens):
                 print("[ERROR] Variable named: '{}', does not exist yet".format(token.tag.identifier))
                 quit()
             html += variables[token.tag.identifier]
-
     return html
 
 class SyntaxTokenTypes(Enum):
