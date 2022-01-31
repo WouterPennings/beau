@@ -9,20 +9,29 @@ def save_file(name, content):
 def main():
     tokens = []
 
+    tokens.append(Token(Tag(TagType.Div, 0)))
     tokens.append(Token(Tag(TagType.Paragraph, 0)))
     tokens.append(Token(Value("Hello", ValueType.String)))
     tokens.append(Token(Tag(TagType.Paragraph, 1)))
+    tokens.append(Token(Tag(TagType.Break, 2)))
     tokens.append(Token(Tag(TagType.HeaderFour, 0)))
     tokens.append(Token(VariableAssign("Bonjour", "Hoeraa")))
     tokens.append(Token(VariableIndex("Bonjour")))
     tokens.append(Token(Tag(TagType.HeaderFour, 1)))
+    tokens.append(Token(Tag(TagType.Div, 1)))
 
     variables = {}
-
+    depth = 0
+    tab = "    "
     html = ""
     for token in tokens:
         if type(token.tag) == Tag:
             t = token.tag
+
+            if t.type == 1 and depth > 0:
+                depth -= 1
+
+            html += tab*depth
             match t.tag:
                 case TagType.Paragraph:
                     if t.type == 0: html += "<p>"
@@ -39,13 +48,25 @@ def main():
                 case TagType.HeaderFour:
                     if t.type == 0: html += "<h4>"
                     else: html += "</h4>"
-                case TagType.HeaderF:
+                case TagType.HeaderFive:
                     if t.type == 0: html += "<h5>"
-                    else: html += "</h5>"                                                                
+                    else: html += "</h5>"   
+                case TagType.Div:
+                    if t.type == 0: html += "<div>"
+                    else: html += "</div>"
+                case TagType.Break:
+                    html += "</br>"
+            html += "\n"
+            
+            if t.type == 0:
+                depth += 1
+
         elif type(token.tag) == Value:
-            html += token.tag.value
+            html += tab*depth
+            html += token.tag.value + '\n'
         elif type(token.tag) == VariableAssign:
-            variables[token.tag.identifier] = token.tag.value
+            html += tab*depth
+            variables[token.tag.identifier] = token.tag.value + '\n'
         elif type(token.tag == VariableIndex):
             html += variables[token.tag.identifier]
 
