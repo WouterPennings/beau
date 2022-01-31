@@ -192,12 +192,23 @@ def parse_beau(syntax_tokens):
                         tokens.append(Token(Tag(TagType.HeaderOne, 0)))
             case SyntaxTokenTypes.Word:
                 tokens.append(Token(Value(syntax_tokens[i].literal, ValueType.String)))
+            case SyntaxTokenTypes.SquareBracketLeft:
+                i += 1
+                if syntax_tokens[i].type is not SyntaxTokenTypes.Word:
+                    print("[ERROR] Expected a variable name")
+                    quit()
+                name = syntax_tokens[i].literal
+                i += 1
+                if syntax_tokens[i].type is not SyntaxTokenTypes.SquareBracketRight:
+                    print("[ERROR] Expected a square right bracket")
+                    quit()
+                tokens.append(Token(VariableIndex(name)))
         i += 1
     
     return tokens
 
 def main():
-    input = "<var name=\"x\" value=\"1234\"/><h1>hello</h1>"
+    input = "<var name=\"x\" value=\"1234\"/><h1>[x]</h1>"
     syntax_tokens = tokenize_beau(input)
     tags = parse_beau(syntax_tokens)
 
