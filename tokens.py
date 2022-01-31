@@ -5,19 +5,9 @@ class ValueType(Enum):
     String = auto()
     Integer = auto()
 
-class TagType(Enum):
-    Paragraph = auto()
-    HeaderOne = auto()
-    HeaderTwo = auto()
-    HeaderThree = auto()
-    HeaderFour = auto()
-    HeaderFive = auto()
-    Div = auto()
-    Break = auto()
-
 @dataclass
-class Tag:
-    tag: TagType
+class NativeTag:
+    tag: str
     type: int # 0 = Start, 1 = End, 2 = Void
 
 @dataclass

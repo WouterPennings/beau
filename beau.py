@@ -1,5 +1,4 @@
-# import sys
-from turtle import ht
+import sys
 from tokens import *
 
 def save_file(name, content):
@@ -11,33 +10,36 @@ def compile_to_html(tokens):
     variables = {}
     html = ""
     for token in tokens:
-        if type(token.tag) == Tag:
+        if type(token.tag) == NativeTag:
             t = token.tag
 
-            match t.tag:
-                case TagType.Paragraph:
-                    if t.type == 0: html += "<p>"
-                    else: html += "</p>"
-                case TagType.HeaderOne:
-                    if t.type == 0: html += "<h1>"
-                    else: html += "</h1>"
-                case TagType.HeaderTwo:
-                    if t.type == 0: html += "<h2>"
-                    else: html += "</h2>"                    
-                case TagType.HeaderThree:
-                    if t.type == 0: html += "<h3>"
-                    else: html += "</h3>"
-                case TagType.HeaderFour:
-                    if t.type == 0: html += "<h4>"
-                    else: html += "</h4>"
-                case TagType.HeaderFive:
-                    if t.type == 0: html += "<h5>"
-                    else: html += "</h5>"   
-                case TagType.Div:
-                    if t.type == 0: html += "<div>"
-                    else: html += "</div>"
-                case TagType.Break:
-                    html += "</br>"
+            if t.type == 0: html += "<{}>".format(t.tag)
+            else: html += "</{}>".format(t.tag)
+            
+            # match t.tag:
+            #     case TagType.Paragraph:
+            #         if t.type == 0: html += "<p>"
+            #         else: html += "</p>"
+            #     case TagType.HeaderOne:
+            #         if t.type == 0: html += "<h1>"
+            #         else: html += "</h1>"
+            #     case TagType.HeaderTwo:
+            #         if t.type == 0: html += "<h2>"
+            #         else: html += "</h2>"                    
+            #     case TagType.HeaderThree:
+            #         if t.type == 0: html += "<h3>"
+            #         else: html += "</h3>"
+            #     case TagType.HeaderFour:
+            #         if t.type == 0: html += "<h4>"
+            #         else: html += "</h4>"
+            #     case TagType.HeaderFive:
+            #         if t.type == 0: html += "<h5>"
+            #         else: html += "</h5>"   
+            #     case TagType.Div:
+            #         if t.type == 0: html += "<div>"
+            #         else: html += "</div>"
+            #     case TagType.Break:
+            #         html += "</br>"
 
         elif type(token.tag) == Value:
             html += token.tag.value
@@ -179,7 +181,6 @@ def parse_beau(syntax_tokens):
                     if syntax_tokens[i].type is not SyntaxTokenTypes.AngleBracketRight:
                         print("[ERROR] Expected a '>'")
                         quit()
-
                     tokens.append(Token(VariableAssign(name.literal, value.literal))) 
                 else:
                     tag = syntax_tokens[i - 1].literal    
@@ -187,9 +188,9 @@ def parse_beau(syntax_tokens):
                         print("[ERROR] Expected a '>'")
                         quit()
                     if is_closing:
-                        tokens.append(Token(Tag(TagType.HeaderOne, 1)))
+                        tokens.append(Token(NativeTag(tag, 1)))
                     else:
-                        tokens.append(Token(Tag(TagType.HeaderOne, 0)))
+                        tokens.append(Token(NativeTag(tag, 0)))
             case SyntaxTokenTypes.Word:
                 tokens.append(Token(Value(syntax_tokens[i].literal, ValueType.String)))
             case SyntaxTokenTypes.SquareBracketLeft:
@@ -203,39 +204,28 @@ def parse_beau(syntax_tokens):
                     print("[ERROR] Expected a square right bracket")
                     quit()
                 tokens.append(Token(VariableIndex(name)))
+            case _:
+                print("[ERROR] Got a character this is not supported in this context")
         i += 1
     
     return tokens
 
-def main():
-    input = "<var name=\"x\" value=\"1234\"/><h1>[x]</h1>"
+def main(filename: str):
+    with open(filename, 'r') as file:
+        input = file.read().rstrip()
+
     syntax_tokens = tokenize_beau(input)
     tags = parse_beau(syntax_tokens)
-
-    # tokens.append(Token(Tag(TagType.Div, 0)))
-    # tokens.append(Token(Tag(TagType.Paragraph, 0)))
-    # tokens.append(Token(Value("Hello", ValueType.String)))
-    # tokens.append(Token(Tag(TagType.Paragraph, 1)))
-    # tokens.append(Token(Tag(TagType.Break, 2)))
-    # tokens.append(Token(Tag(TagType.HeaderFour, 0)))
-    # tokens.append(Token(VariableAssign("Bonjour", "Hoeraa")))
-    # tokens.append(Token(VariableIndex("Bonjour")))
-    # tokens.append(Token(VariableIndex("Bonjour")))
-    # tokens.append(Token(VariableIndex("Bonjour")))
-    # tokens.append(Token(VariableIndex("Bonjour")))
-    # tokens.append(Token(Tag(TagType.HeaderFour, 1)))
-    # tokens.append(Token(Tag(TagType.Div, 1)))
 
     html = compile_to_html(tags)
     save_file("index.html", html)
 
 if __name__ == "__main__":
-    # if len(sys.argv) < 2:
-    #     print("[ERROR] You did not supply enough arguments")
-    #     print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
-    # elif len(sys.argv) > 2:
-    #     print("[ERROR] You supplied too many arguments")
-    #     print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
-    # else:
-    #     main()
-    main()
+    if len(sys.argv) < 2:
+        print("[ERROR] You did not supply enough arguments")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
+    elif len(sys.argv) > 2:
+        print("[ERROR] You supplied too many arguments")
+        print("[INFO] To execute type: 'py ./beau.py <FILENAME>'")
+    else:
+        main(sys.argv[1])
