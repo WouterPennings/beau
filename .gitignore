@@ -2,6 +2,7 @@
 *.beau
 index.html
 styles.css
+*.png
 
 __pycache__/
 *.py[cod]
