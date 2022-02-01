@@ -87,27 +87,27 @@ def parse_props(syntax_tokens, index):
     props = []
     while index < len(syntax_tokens):
         prop_name = syntax_tokens[index]
-        if prop_name.type is  SyntaxTokenTypes.Word:
-            index += 1
-            if syntax_tokens[index].type is not SyntaxTokenTypes.Assign:
-                print("[ERROR] Expected a '=' at name")
-                quit()
-            index += 1
-            if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
-                print("[ERROR] Expected a '\"' at name")
-                quit()
-            index += 1
-            value = ""
-            while syntax_tokens[index].type is SyntaxTokenTypes.Word or syntax_tokens[index].type is SyntaxTokenTypes.Colon or syntax_tokens[index].type is SyntaxTokenTypes.Slash or syntax_tokens[index].type is SyntaxTokenTypes.Dot or syntax_tokens[index].type is SyntaxTokenTypes.SemiColon or syntax_tokens[index].type is SyntaxTokenTypes.Dash:
-                value += syntax_tokens[index].literal
-                index += 1
-            if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
-                print("[ERROR] Expected a '\"', got: {}".format(syntax_tokens[index].literal))
-                quit()
-            props.append((prop_name.literal, value))
-            index += 1
-        else:
+        if prop_name.type is not SyntaxTokenTypes.Word:
             return props, index 
+        index += 1
+        if syntax_tokens[index].type is not SyntaxTokenTypes.Assign:
+            print("[ERROR] Expected a '=' at name")
+            quit()
+        index += 1
+        if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
+            print("[ERROR] Expected a '\"' at name")
+            quit()
+        index += 1
+        value = ""
+        while syntax_tokens[index].type is SyntaxTokenTypes.Word or syntax_tokens[index].type is SyntaxTokenTypes.Colon or syntax_tokens[index].type is SyntaxTokenTypes.Slash or syntax_tokens[index].type is SyntaxTokenTypes.Dot or syntax_tokens[index].type is SyntaxTokenTypes.SemiColon or syntax_tokens[index].type is SyntaxTokenTypes.Dash:
+            value += syntax_tokens[index].literal
+            index += 1
+        if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
+            print("[ERROR] Expected a '\"', got: {}".format(syntax_tokens[index].literal))
+            quit()
+        props.append((prop_name.literal, value))
+        index += 1
+            
     return props, index
 
 def parse_beau(syntax_tokens):
@@ -268,8 +268,6 @@ def main(filename: str):
         input = file.read().rstrip()
 
     syntax_tokens = tokenize_beau(input)
-    # for t in syntax_tokens:
-    #     print(t)
     tags = parse_beau(syntax_tokens)
 
     html = compile_to_html(tags)
