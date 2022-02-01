@@ -1,9 +1,2 @@
-<html>
-    <head>
-        <var name="Number" value="Twelve"/>
-    </head>
-    <body>
-        <h1>[Number]</h1>
-        <p>My first paragraph</p>
-    </body>
-</html>
+<var name="wouter" value="1234">
+<h1 class="wouter" style="awdwad">
