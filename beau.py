@@ -11,6 +11,11 @@ class ValueType(Enum):
 class NativeTag:
     tag: str
     type: int # 0 = Start, 1 = End, 2 = Void
+    props: list[(str, str)]
+
+@dataclass
+class Prop:
+    name: str
 
 @dataclass
 class Value:
@@ -36,7 +41,14 @@ def compile_to_html(tokens):
     for token in tokens:
         if type(token.tag) == NativeTag:
             t = token.tag
-            if t.type == 0: html += "<{}>".format(t.tag)
+            if t.type == 0:
+                if len(t.props) == 0: 
+                    html += "<{}>".format(t.tag)
+                else:
+                    props = ""
+                    for p in t.props:
+                        props += " " + p[0] + "=\""+ p[1] + "\""
+                    html += "<{}".format(t.tag) + props + ">"
             else: html += "</{}>".format(t.tag)
         elif type(token.tag) == Value:
             html += token.tag.value
@@ -55,6 +67,8 @@ class SyntaxTokenTypes(Enum):
     AngleBracketLeft = '<'
     AngleBracketRight = '>'
     Slash = '/'
+    Dot = '.'
+    colon = ':' 
     Assign = '='
     DoubleQuote = '"'
     SquareBracketLeft = '['
@@ -67,46 +81,36 @@ class SyntaxToken:
     type: SyntaxTokenTypes
     literal: str
 
-def tokenize_beau(input):
-    syntax_tokens = []
-    i = 0
-    while i < len(input):
-        char = input[i]
-        match char:
-            case '<':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
-            case '>':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketRight, char))
-            case '/':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Slash, char))
-            case '=':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Assign, char))                   
-            case '"':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.DoubleQuote, char))    
-            case '[':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketLeft, char))
-            case ']':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketRight, char))
-            case _:
-                if input[i] != " ":
-                    word = ""
-                    while input[i].isalnum():
-                        word += input[i]
-                        if not input[i + 1].isalnum():
-                            break
-                        else:
-                            i += 1
-                    if word == "var":
-                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Var, word))
-                    else:
-                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, word))
-        i += 1
-
-    return syntax_tokens
+def parse_props(syntax_tokens, index):
+    props = []
+    while index < len(syntax_tokens):
+        prop_name = syntax_tokens[index]
+        if prop_name.type is  SyntaxTokenTypes.Word:
+            index += 1
+            if syntax_tokens[index].type is not SyntaxTokenTypes.Assign:
+                print("[ERROR] Expected a '=' at name")
+                quit()
+            index += 1
+            if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
+                print("[ERROR] Expected a '\"' at name")
+                quit()
+            index += 1
+            value = syntax_tokens[index]
+            if value.type is not SyntaxTokenTypes.Word:
+                print("[ERROR] Expected a identifier for the variable")
+                quit() 
+            index += 1
+            if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
+                print("[ERROR] Expected a '\"', got: {}".format(value.literal))
+                quit()
+            props.append((prop_name.literal, value.literal))
+            index += 1
+        else:
+            return props, index 
+    return props, index
 
 def parse_beau(syntax_tokens):
     tokens = []
-
     i = 0
     while i < len(syntax_tokens):
         current = syntax_tokens[i]
@@ -119,13 +123,13 @@ def parse_beau(syntax_tokens):
                     i += 1
                     tag = syntax_tokens[i]
                 if tag.type != SyntaxTokenTypes.Var and tag.type != SyntaxTokenTypes.Word:
-                    print(tag.type)
                     print("[ERROR] Next type should be a tag")
                     quit()
-                i += 1
                 if tag.type == SyntaxTokenTypes.Var:
+                    i += 1
                     if is_closing:
                         print("[ERROR] Variable declaration tag cannot be a closing one")
+                        quit()
                     x = syntax_tokens[i]
                     if x.type is not SyntaxTokenTypes.Word and x.literal != "name":
                         print("[ERROR] Next token should be name")
@@ -179,14 +183,16 @@ def parse_beau(syntax_tokens):
                         quit()
                     tokens.append(Token(VariableAssign(name.literal, value.literal))) 
                 else:
-                    tag = syntax_tokens[i - 1].literal    
+                    tag = syntax_tokens[i]
+                    i += 1
+                    props, i = parse_props(syntax_tokens, i) 
                     if syntax_tokens[i].type is not SyntaxTokenTypes.AngleBracketRight:
-                        print("[ERROR] Expected a '>'")
+                        print("[ERROR] Expected a '>', got: '{}'".format(tag.literal))
                         quit()
                     if is_closing:
-                        tokens.append(Token(NativeTag(tag, 1)))
+                        tokens.append(Token(NativeTag(tag.literal, 1, props)))
                     else:
-                        tokens.append(Token(NativeTag(tag, 0)))
+                        tokens.append(Token(NativeTag(tag.literal, 0, props)))
             case SyntaxTokenTypes.Word:
                 tokens.append(Token(Value(syntax_tokens[i].literal, ValueType.String)))
             case SyntaxTokenTypes.SquareBracketLeft:
@@ -201,10 +207,50 @@ def parse_beau(syntax_tokens):
                     quit()
                 tokens.append(Token(VariableIndex(name)))
             case _:
-                print("[ERROR] Got a character this is not supported in this context")
+                print("[ERROR] Character: '{}', is not supported in this context".format(current.literal))
+                quit()
         i += 1
-    
     return tokens
+
+def tokenize_beau(input):
+    syntax_tokens = []
+    i = 0
+    while i < len(input):
+        char = input[i]
+        match char:
+            case '<':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
+            case '>':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketRight, char))
+            case '/':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Slash, char))
+            case '=':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Assign, char))                   
+            case '"':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.DoubleQuote, char))    
+            case '[':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketLeft, char))
+            case ']':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketRight, char))
+            case '.':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Dot, char))
+            case '/':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Colon, char))
+            case _:
+                if input[i] != " ":
+                    word = ""
+                    while input[i].isalnum() or input[i] == '.':
+                        word += input[i]
+                        if not input[i + 1].isalnum():
+                            break
+                        else:
+                            i += 1
+                    if word == "var":
+                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Var, word))
+                    else:
+                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, word))
+        i += 1
+    return syntax_tokens
 
 def save_file(name, content):
     f = open(name, "w")
@@ -216,6 +262,8 @@ def main(filename: str):
         input = file.read().rstrip()
 
     syntax_tokens = tokenize_beau(input)
+    # for t in syntax_tokens:
+    #     print(t)
     tags = parse_beau(syntax_tokens)
 
     html = compile_to_html(tags)
@@ -231,7 +279,7 @@ if __name__ == "__main__":
         webbrowser.open("https://stackoverflow.com/search?q=spaces+in+path&s=00765823-f25b-46bf-a749-53aed287d501")
     else:
         filename = sys.argv[1]
-        if filename.split('.')[-1] != "beau script":
+        if filename.split('.')[-1] != " beau":
             print("[ERROR] File should end with '. beau'")
             quit()
         main(sys.argv[1])
