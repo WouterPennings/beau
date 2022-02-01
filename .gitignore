@@ -1,5 +1,6 @@
 # Personal
-*.beau
+*. beau
+!example. beau
 index.html
 styles.css
 *.png
