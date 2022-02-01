@@ -1,2 +1,9 @@
-<h1>My First Heading</h1>
-<p>My first paragraph\\<></p>
+<html>
+    <head>
+        <var name="Number" value="Twelve"/>
+    </head>
+    <body>
+        <h1>[Number]</h1>
+        <p>My first paragraph</p>
+    </body>
+</html>
