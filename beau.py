@@ -66,6 +66,7 @@ def compile_to_html(tokens):
 class SyntaxTokenTypes(Enum):
     AngleBracketLeft = '<'
     AngleBracketRight = '>'
+    ClosingSymbol = '</'
     Slash = '/'
     Dash = '-'
     Dot = '.'
@@ -221,7 +222,15 @@ def tokenize_beau(input):
         #print(char)
         match char:
             case '<':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
+                if input[i + 1] == '>':
+                    syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, "<>"))
+                    i += 1
+                # THIS IS FOR CLOSING A TAG
+                # elif input[i + 1] == '/':
+                #     syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.ClosingSymbol, "</"))
+                #     i += 1
+                else:
+                    syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
             case '>':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketRight, char))
             case '/':
@@ -242,6 +251,8 @@ def tokenize_beau(input):
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Colon, char))
             case ';':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SemiColon, char))
+            case '\\':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, "\\"))
             case _:
                 if input[i] != " ":
                     word = ""

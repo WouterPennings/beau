@@ -1,6 +1,2 @@
-<link rel="stylesheet" href="css/style.css">
-<var name="w_" value="wouteadar"/>
-<div style="border-radius:10px;background-color:red">
-    <h1 class="poep"style="color:blue">[w_]</h1>
-</div>
-<img src="lp.png">
+<h1>My First Heading</h1>
+<p>My first paragraph\\<></p>
