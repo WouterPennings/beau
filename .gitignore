@@ -1,7 +1,7 @@
 # Personal
 *.beau
 index.html
-
+styles.css
 
 __pycache__/
 *.py[cod]

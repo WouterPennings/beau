@@ -67,8 +67,10 @@ class SyntaxTokenTypes(Enum):
     AngleBracketLeft = '<'
     AngleBracketRight = '>'
     Slash = '/'
+    Dash = '-'
     Dot = '.'
-    colon = ':' 
+    Colon = ':' 
+    SemiColon = ';'
     Assign = '='
     DoubleQuote = '"'
     SquareBracketLeft = '['
@@ -95,15 +97,14 @@ def parse_props(syntax_tokens, index):
                 print("[ERROR] Expected a '\"' at name")
                 quit()
             index += 1
-            value = syntax_tokens[index]
-            if value.type is not SyntaxTokenTypes.Word:
-                print("[ERROR] Expected a identifier for the variable")
-                quit() 
-            index += 1
+            value = ""
+            while syntax_tokens[index].type is SyntaxTokenTypes.Word or syntax_tokens[index].type is SyntaxTokenTypes.Colon or syntax_tokens[index].type is SyntaxTokenTypes.Slash or syntax_tokens[index].type is SyntaxTokenTypes.Dot or syntax_tokens[index].type is SyntaxTokenTypes.SemiColon or syntax_tokens[index].type is SyntaxTokenTypes.Dash:
+                value += syntax_tokens[index].literal
+                index += 1
             if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
-                print("[ERROR] Expected a '\"', got: {}".format(value.literal))
+                print("[ERROR] Expected a '\"', got: {}".format(syntax_tokens[index].literal))
                 quit()
-            props.append((prop_name.literal, value.literal))
+            props.append((prop_name.literal, value))
             index += 1
         else:
             return props, index 
@@ -217,6 +218,7 @@ def tokenize_beau(input):
     i = 0
     while i < len(input):
         char = input[i]
+        #print(char)
         match char:
             case '<':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
@@ -225,7 +227,9 @@ def tokenize_beau(input):
             case '/':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Slash, char))
             case '=':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Assign, char))                   
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Assign, char))  
+            case '-':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Dash, char))                   
             case '"':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.DoubleQuote, char))    
             case '[':
@@ -234,14 +238,16 @@ def tokenize_beau(input):
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketRight, char))
             case '.':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Dot, char))
-            case '/':
+            case ':':
                 syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Colon, char))
+            case ';':
+                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SemiColon, char))
             case _:
                 if input[i] != " ":
                     word = ""
-                    while input[i].isalnum() or input[i] == '.':
+                    while input[i].isalnum() or input[i] == '_':
                         word += input[i]
-                        if not input[i + 1].isalnum():
+                        if not input[i + 1].isalnum() and input[i + 1] != '_':
                             break
                         else:
                             i += 1

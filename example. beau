@@ -1,1 +1,5 @@
-<h1 style="width: 100px">123</h1>
+<link rel="stylesheet" href="css/style.css">
+<var name="w_" value="wouteadar"/>
+<div style="border-radius:10px;background-color:red">
+    <h1 class="poep"style="color:blue">[w_]</h1>
+</div>
