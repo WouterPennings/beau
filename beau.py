@@ -69,10 +69,10 @@ class Compiler:
                             self.throw_error("You have a attribute without a name")
                         if attributes[0].Value == "":
                             self.throw_error("You called a variable with a name without any characters")
-                        elif attributes[0].Value in variables:
-                            html += variables[attributes[0].Value]
-                        else:
+                        elif not attributes[0].Value in variables:
                             self.throw_error("You called '{}', but that does not exist".format(attributes[0].Value[1:-1]))
+                        else:
+                            html += variables[attributes[0].Value]
                     else:
                         self.throw_error("You have supplied: {} attributes, but '{}' can only take a max of 2".format(len(attributes), token.Tag.Literal))
         return html
