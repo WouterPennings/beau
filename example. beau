@@ -1,2 +1,2 @@
-<link rel="stylesheet" href="css\\styles.css">
-<h1>poep<h1>
+<let name="hello" value="poep">
+<h1> <let name="hello"></h1>

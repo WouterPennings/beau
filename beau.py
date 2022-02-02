@@ -1,8 +1,6 @@
-import re
 import sys
 from dataclasses import dataclass
 from enum import Enum, auto
-import webbrowser
 
 CUSTOM_TAGS = ["let"]
 
@@ -10,7 +8,6 @@ class TokenType(Enum):
     Native = auto()             # HTML Tokens: h1, p, iframe, ul
     Value = auto()              # Just a piece of text
     Let = auto()                # Custom Token: declaring variable
-    Read = auto()               # Custom Token: Reading a variable
 
 @dataclass          
 class Attr:            
@@ -31,7 +28,7 @@ class Value:
 @dataclass
 class Let:                      # For creating and reading a variable, depends on the props
     Literal: str        
-    props: list[Attr]          
+    Attributes: list[Attr]          
 
 @dataclass
 class Token:
@@ -57,6 +54,24 @@ class Compiler:
                         html += "<{} {}>".format(token.Tag.Literal, attr)
                 case TokenType.Value:
                     html += token.Tag.Value
+                case TokenType.Let:
+                    attributes = token.Tag.Attributes
+                    if len(token.Tag.Attributes) == 2:
+                        if attributes[0].Name in variables:
+                            print("[WARNING] Variable with the same name has already been created")
+                        variables[attributes[0].Name] = attributes[0].Value
+                    elif len(attributes) == 1:
+                        if attributes[0].Name == "":
+                            print("[ BEAU ERROR ] You called a variable with a name without any characters")
+                            quit() 
+                        elif attributes[0].Name in variables:
+                            html += (variables[attributes[0].Name])[1:-1]
+                        else:
+                            print("[ BEAU ERROR ] You called '{}', but that does not exist".format(attributes[0].Name))
+                            quit() 
+                    else:
+                        print("[ BEAU ERROR ] You have supplied: {} attributes, but '{}' can only take a max of 2".format(len(attributes), token.Tag.Literal))
+                        quit()
         return html
 
 class Parser:
@@ -177,7 +192,6 @@ if __name__ == "__main__":
     elif len(sys.argv) > 2:
         print("[ERROR] You supplied too many arguments")
         print("[INFO] To execute type: 'py ./beau.py <FILENAME>. beau'")
-        webbrowser.open("https://stackoverflow.com/search?q=spaces+in+path&s=00765823-f25b-46bf-a749-53aed287d501")
     else:
         filename = sys.argv[1]
         if filename.split('.')[-1] != " beau":
