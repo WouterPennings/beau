@@ -56,6 +56,12 @@ class Compiler:
                     html += token.Tag.Value
                 case TokenType.Let:
                     attributes = token.Tag.Attributes
+                    allowed_attributes = ["name", "value"]
+                    for a in attributes:
+                        if not a.Name in allowed_attributes:
+                            print("[ BEAU ERROR ] The attribute with the name: {}, is not known in this context".format(a.Name))
+                            quit() 
+
                     if len(token.Tag.Attributes) == 2:
                         if attributes[0].Name in variables:
                             print("[WARNING] Variable with the same name has already been created")
