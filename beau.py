@@ -59,26 +59,27 @@ class Compiler:
                     allowed_attributes = ["name", "value"]
                     for a in attributes:
                         if not a.Name in allowed_attributes:
-                            print("[ BEAU ERROR ] The attribute with the name: {}, is not known in this context".format(a.Name))
-                            quit() 
-
+                            self.throw_error("The attribute with the name: {}, is not known in this context".format(a.Name))
                     if len(token.Tag.Attributes) == 2:
-                        if attributes[0].Name in variables:
-                            print("[WARNING] Variable with the same name has already been created")
-                        variables[attributes[0].Name] = attributes[0].Value
+                        if attributes[0].Value in variables:
+                            print("[ BEAU WARNING] Variable with the same name has already been created")
+                        variables[attributes[0].Value] = attributes[1].Value[1:-1]
                     elif len(attributes) == 1:
-                        if attributes[0].Name == "":
-                            print("[ BEAU ERROR ] You called a variable with a name without any characters")
-                            quit() 
-                        elif attributes[0].Name in variables:
-                            html += (variables[attributes[0].Name])[1:-1]
+                        if not attributes[0].Name == "name" and attributes[0].Value == "": 
+                            self.throw_error("You have a attribute without a name")
+                        if attributes[0].Value == "":
+                            self.throw_error("You called a variable with a name without any characters")
+                        elif attributes[0].Value in variables:
+                            html += variables[attributes[0].Value]
                         else:
-                            print("[ BEAU ERROR ] You called '{}', but that does not exist".format(attributes[0].Name))
-                            quit() 
+                            self.throw_error("You called '{}', but that does not exist".format(attributes[0].Value[1:-1]))
                     else:
-                        print("[ BEAU ERROR ] You have supplied: {} attributes, but '{}' can only take a max of 2".format(len(attributes), token.Tag.Literal))
-                        quit()
+                        self.throw_error("You have supplied: {} attributes, but '{}' can only take a max of 2".format(len(attributes), token.Tag.Literal))
         return html
+
+    def throw_error(self, text):
+        print("[ BEAU ERROR] {}".format(text))
+        quit() 
 
 class Parser:
     def __init__(self, input: str):
