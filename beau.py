@@ -2,69 +2,7 @@ import re
 import sys
 from dataclasses import dataclass
 from enum import Enum, auto
-from tkinter import Variable
-from typing import Literal
 import webbrowser
-
-# class ValueType(Enum):
-#     String = auto()
-#     Integer = auto()
-
-# @dataclass
-# class NativeTag:
-#     tag: str
-#     type: int # 0 = Start, 1 = End, 2 = Void
-#     props: list[(str, str)]
-
-# @dataclass
-# class Prop:
-#     name: str
-
-# @dataclass
-# class Value:
-#     value: str
-#     type: ValueType
-
-# @dataclass
-# class VariableIndex:
-#     identifier: str
-
-# @dataclass
-# class VariableAssign:
-#     identifier: str   
-#     value: str 
-
-# @dataclass
-# class Token:
-#     tag: any
-
-# def compile_to_html(tokens):
-#     variables = {}
-#     html = ""
-#     for token in tokens:
-#         if type(token.tag) == NativeTag:
-#             t = token.tag
-#             if t.type == 0:
-#                 if len(t.props) == 0: 
-#                     html += "<{}>".format(t.tag)
-#                 else:
-#                     props = ""
-#                     for p in t.props:
-#                         props += " " + p[0] + "=\""+ p[1] + "\""
-#                     html += "<{}".format(t.tag) + props + ">"
-#             else: html += "</{}>".format(t.tag)
-#         elif type(token.tag) == Value:
-#             html += token.tag.value
-#         elif type(token.tag) == VariableAssign:
-#             if token.tag.identifier in variables:
-#                 print("[WARNING] Variable with the same name has already been created")
-#             variables[token.tag.identifier] = token.tag.value
-#         elif type(token.tag == VariableIndex):
-#             if not token.tag.identifier in variables:
-#                 print("[ERROR] Variable named: '{}', does not exist yet".format(token.tag.identifier))
-#                 quit()
-#             html += variables[token.tag.identifier]
-#     return html
 
 CUSTOM_TAGS = ["let"]
 
@@ -76,14 +14,14 @@ class TokenType(Enum):
 
 @dataclass          
 class Attr:            
-    name: any                   # Either a hardcoded string or Value 
-    value: any                  # Either a hardcoded string or Value 
+    Name: any                   # Either a hardcoded string or Value 
+    Value: any                  # Either a hardcoded string or Value 
     Op: str                     # Operator is the thing in between the name and the value (class="test")
 
 @dataclass          
 class Native:           
     Literal: str            
-    attr_pos: bool                  # false=end-tag, true=has-props (Beginning or void tag)
+    attr_pos: bool              # false=end-tag, true=has-props (Beginning or void tag)
     Attributes: list[Attr]      
 
 @dataclass
@@ -92,13 +30,34 @@ class Value:
 
 @dataclass
 class Let:                      # For creating and reading a variable, depends on the props
-    Literal: str
+    Literal: str        
     props: list[Attr]          
 
 @dataclass
 class Token:
     Type: TokenType
     Tag: any
+
+class Compiler:
+    def __init__(self, tokens: list[Token]):
+        self.tokens: list[Token] = tokens
+
+    def compiler_to_html(self):
+        variables = {}
+        html = ""
+        for token in self.tokens:
+            match token.Type:
+                case TokenType.Native:
+                    if not token.Tag.attr_pos:
+                        html += "</{}>".format(token.Tag.Literal)
+                    else:
+                        attr = " "
+                        for a in token.Tag.Attributes:
+                            attr += a.Name + a.Op + a.Value + " "
+                        html += "<{} {}>".format(token.Tag.Literal, attr)
+                case TokenType.Value:
+                    html += token.Tag.Value
+        return html
 
 class Parser:
     def __init__(self, input: str):
@@ -144,7 +103,8 @@ class Parser:
                         else:
                             syntax_tokens.append(Token(TokenType.Native, Native(tag, True, attributes)))
                 case _:
-                    syntax_tokens.append(Token(TokenType.Value, Value(self.current_char + self.get_until(['<']))))  
+                    text = self.input[self.index - 1] + self.current_char + self.get_until(['<'])
+                    syntax_tokens.append(Token(TokenType.Value, Value(text)))  
                     self.prev_character()  
                     self.prev_character()      
             self.next_character() 
@@ -173,6 +133,9 @@ class Parser:
             while i < len(prop_text):
                 value += prop_text[i]
                 i += 1
+                if prop_text[i] == "\"":
+                    value += prop_text[i]
+                    break
             n = None
             v = None
             if name.isupper(): n = Let("let", [("name", "=", name)])
@@ -180,10 +143,7 @@ class Parser:
             if value.isupper(): v = Let("let", [("name", "=", value)])
             else: v = value
             props.append(Attr(n, v, op))
-            if not i >= len(prop_text):
-                while prop_text[i] == ' ': 
-                    print(i)
-                    i += 1
+            i += 2 # Do not know exacly why plus two is the thing, but it works
         return props
 
     def get_tag(self, literal: str):
@@ -205,8 +165,10 @@ def main(filename: str):
 
     p = Parser(input)
     result = p.parse()
-    for r in result:
-        print(r)
+    # for r in result:
+    #     print(r)
+    c = Compiler(result)
+    save_file("index.html", c.compiler_to_html())
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
