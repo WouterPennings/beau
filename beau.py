@@ -117,7 +117,7 @@ class Parser:
                         current_literal = self.get_until(['>'])
                         syntax_tokens.append(Token(TokenType.Native, Native(current_literal[0:], False, [])))
                     else:                                                                            
-                        current_literal = self.current_char + self.get_until(['>', '/']) 
+                        current_literal = self.current_char + self.get_until(['/', '>']) 
                         tag, index = self.get_tag(current_literal)
                         attributes = self.get_attributes(current_literal[index:].strip())
                         if tag in CUSTOM_TAGS:
@@ -155,7 +155,7 @@ class Parser:
             while i < len(prop_text):
                 value += prop_text[i]
                 i += 1
-                if prop_text[i] == "\"":
+                if prop_text[i] == "\"" or prop_text[i] == "'" :
                     value += prop_text[i]
                     break
             n = None

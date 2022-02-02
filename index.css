@@ -1,0 +1,131 @@
+/*@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@1,200&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@200&display=swap');
+
+html {
+    background-color: #000000;
+}
+
+body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    margin: 200px 40px 0 40px;
+}
+
+p {
+    margin: 0;
+}
+
+@media screen and (max-width: 1100px) {
+    body {
+        margin: 50px 10px 0 10px;
+        display: block;
+    }
+
+    div.left {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 0;
+    }
+    
+    div.right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+
+        margin-top: 200px;
+    }
+
+    div.link {
+        margin-top: 50px;
+    }
+
+}
+
+a:hover {
+    color: blueviolet;
+    padding-right: 40px;
+}
+
+.left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 20%;
+}
+
+.right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.link {
+    font-size: 65px;
+    font-family: 'Roboto Mono', monospace;
+
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+
+    padding-right: 25px;
+
+    transition: 0.4s;
+}
+
+.me {
+    font-size: 57px;
+    font-family: 'Roboto Mono', monospace;
+    color: white;
+
+    margin: 0;
+
+    padding-left: 8px;
+}
+
+.name {
+    font-size: 70px;
+    font-family: 'Roboto Mono', monospace;
+    font-style: italic;
+    color: blueviolet;
+    
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 18px;
+    font-family: 'Roboto Mono', monospace;
+    color: white;
+
+    margin: 0 0 0 0;
+
+    padding-left: 8px;
+}
+
+.discription {
+    font-size: 38px;
+    color: white;
+
+    font-family: 'Roboto Mono', monospace;
+    margin-top: 100px;
+
+    padding-left: 8px;
+}
+
+.linkBox {
+    display: flex;
+    align-items: stretch;
+}
+
+.arrow {
+    font-size: 65px;
+
+    color: blueviolet;
+    text-decoration: none;
+    font-weight: bold;
+
+    margin: 0;
+}
