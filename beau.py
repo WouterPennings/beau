@@ -31,6 +31,16 @@ class Let:                      # For creating and reading a variable, depends o
     Attributes: list[Attr]          
 
 @dataclass
+class If:                       # If statement 
+    Literal: str        
+    Attributes: list[Attr] 
+
+@dataclass
+class Else:                     # Else block for if-statement
+    Literal: str        
+    Attributes: list[Attr] 
+
+@dataclass
 class Token:
     Type: TokenType
     Tag: any
@@ -63,6 +73,8 @@ class Compiler:
                     if len(token.Tag.Attributes) == 2:
                         if attributes[0].Value in variables:
                             print("[ BEAU WARNING] Variable with the same name has already been created")
+                        # if not attributes[0].Value.isupper():
+                        #     self.throw_error("The variable name: {}, should be all uppercase".format(attributes[0].Value))
                         variables[attributes[0].Value] = attributes[1].Value[1:-1]
                     elif len(attributes) == 1:
                         if not attributes[0].Name == "name" and attributes[0].Value == "": 
@@ -190,7 +202,8 @@ def main(filename: str):
     # for r in result:
     #     print(r)
     c = Compiler(result)
-    save_file("index.html", c.compiler_to_html())
+    save_file('./{}.html'.format(filename.split('.')[1]), c.compiler_to_html())
+    print("[SUCCES] Compiled to native html at: '.{}.html'".format(filename.split('.')[1]))
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
