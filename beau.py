@@ -127,7 +127,6 @@ class Compiler:
         return html
         
     def eval_comparison(self, left: int, op: str, right: int):
-        print(left, op, right)
         match op:
             case 'equals':
                 return (left == right)
