@@ -1,14 +1,5 @@
-<let name="hello" value="jelle">
-<div>
-	<p style="color:blue">hello 	<let name="hello"> </p>
-
-</div>
-<img src="lp.png">
-<let name="hello">
-
-<if left="" op="" right="">>
-
+<if left="2" op="greater" right="1">
+	<h1>adwad</h1>
+	<h2>adawdhelloadsda</h2>
 </if>
-<else>
-
-</else>
+<h1>adawdS</h1>
