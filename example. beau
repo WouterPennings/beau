@@ -1,9 +1,5 @@
-<html>
-    <head>
-        <var name="Number" value="Twelve"/>
-    </head>
-    <body>
-        <h1>[Number]</h1>
-        <p>My first paragraph</p>
-    </body>
-</html>
+<if left="2" op="greater" right="1">
+	<h1>adwad</h1>
+	<h2>adawdhelloadsda</h2>
+</if>
+<h1>adawdS</h1>

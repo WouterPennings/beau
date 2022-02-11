@@ -1,273 +1,245 @@
 import sys
 from dataclasses import dataclass
 from enum import Enum, auto
-import webbrowser
 
-class ValueType(Enum):
-    String = auto()
-    Integer = auto()
+class TokenType(Enum):
+    Native = auto()             # HTML Tokens: h1, p, iframe, ul
+    Value = auto()              # Just a piece of text
+    Let = auto()                # Custom Token: declaring variable
+    If = auto()
+    Else = auto()
 
-@dataclass
-class NativeTag:
-    tag: str
-    type: int # 0 = Start, 1 = End, 2 = Void
-    props: list[(str, str)]
+@dataclass          
+class Attr:            
+    Name: any                   # Either a hardcoded string or Value 
+    Value: any                  # Either a hardcoded string or Value 
+    Op: str                     # Operator is the thing in between the name and the value (class="test")
 
-@dataclass
-class Prop:
-    name: str
+@dataclass          
+class Native:           
+    Literal: str            
+    attr_pos: bool              # false=end-tag, true=has-props (Beginning or void tag)
+    Attributes: list[Attr]      
 
 @dataclass
 class Value:
-    value: str
-    type: ValueType
+    Value: str 
 
 @dataclass
-class VariableIndex:
-    identifier: str
+class Let:                      # For creating and reading a variable, depends on the props
+    Literal: str        
+    Attributes: list[Attr]          
 
 @dataclass
-class VariableAssign:
-    identifier: str   
-    value: str 
+class If:                       # If statement 
+    Literal: str        
+    attr_pos: bool
+    Attributes: list[Attr] 
+
+@dataclass
+class Else:                     # Else block for if-statement
+    Literal: str  
+    attr_pos: bool      
+    Attributes: list[Attr] 
 
 @dataclass
 class Token:
-    tag: any
+    Type: TokenType
+    Tag: any
 
-def compile_to_html(tokens):
-    variables = {}
-    html = ""
-    for token in tokens:
-        if type(token.tag) == NativeTag:
-            t = token.tag
-            if t.type == 0:
-                if len(t.props) == 0: 
-                    html += "<{}>".format(t.tag)
+class Compiler:
+    def __init__(self, tokens: list[Token]):
+        self.tokens: list[Token] = tokens
+        self.current: int = 0
+        self.variables: dict
+
+    def next_token(self):
+        self.current += 1
+
+    def current_token(self):
+        return self.tokens[self.current]
+
+    def compiler_to_html(self):
+        html = ""
+        while self.current < len(self.tokens):
+            html += self.get_html_token()
+            self.next_token()
+        return html
+
+    def get_html_token(self):
+        html = ""
+        match self.current_token().Type:
+            case TokenType.Native:
+                if not self.current_token().Tag.attr_pos:
+                    html += "</{}>".format(self.current_token().Tag.Literal)
                 else:
-                    props = ""
-                    for p in t.props:
-                        props += " " + p[0] + "=\""+ p[1] + "\""
-                    html += "<{}".format(t.tag) + props + ">"
-            else: html += "</{}>".format(t.tag)
-        elif type(token.tag) == Value:
-            html += token.tag.value
-        elif type(token.tag) == VariableAssign:
-            if token.tag.identifier in variables:
-                print("[WARNING] Variable with the same name has already been created")
-            variables[token.tag.identifier] = token.tag.value
-        elif type(token.tag == VariableIndex):
-            if not token.tag.identifier in variables:
-                print("[ERROR] Variable named: '{}', does not exist yet".format(token.tag.identifier))
-                quit()
-            html += variables[token.tag.identifier]
-    return html
-
-class SyntaxTokenTypes(Enum):
-    AngleBracketLeft = '<'
-    AngleBracketRight = '>'
-    ClosingSymbol = '</'
-    Slash = '/'
-    Dash = '-'
-    Dot = '.'
-    Colon = ':' 
-    SemiColon = ';'
-    Assign = '='
-    DoubleQuote = '"'
-    SquareBracketLeft = '['
-    SquareBracketRight = ']'
-    Var = "var"
-    Word = "value" # This can be a tag or a piece of text
-
-@dataclass
-class SyntaxToken:
-    type: SyntaxTokenTypes
-    literal: str
-
-def parse_props(syntax_tokens, index):
-    props = []
-    while index < len(syntax_tokens):
-        prop_name = syntax_tokens[index]
-        if prop_name.type is not SyntaxTokenTypes.Word:
-            return props, index 
-        index += 1
-        if syntax_tokens[index].type is not SyntaxTokenTypes.Assign:
-            print("[ERROR] Expected a '=' at name")
-            quit()
-        index += 1
-        if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
-            print("[ERROR] Expected a '\"' at name")
-            quit()
-        index += 1
-        value = ""
-        while syntax_tokens[index].type is SyntaxTokenTypes.Word or syntax_tokens[index].type is SyntaxTokenTypes.Colon or syntax_tokens[index].type is SyntaxTokenTypes.Slash or syntax_tokens[index].type is SyntaxTokenTypes.Dot or syntax_tokens[index].type is SyntaxTokenTypes.SemiColon or syntax_tokens[index].type is SyntaxTokenTypes.Dash:
-            value += syntax_tokens[index].literal
-            index += 1
-        if syntax_tokens[index].type is not SyntaxTokenTypes.DoubleQuote:
-            print("[ERROR] Expected a '\"', got: {}".format(syntax_tokens[index].literal))
-            quit()
-        props.append((prop_name.literal, value))
-        index += 1
-            
-    return props, index
-
-def parse_beau(syntax_tokens):
-    tokens = []
-    i = 0
-    while i < len(syntax_tokens):
-        current = syntax_tokens[i]
-        match current.type:
-            case SyntaxTokenTypes.AngleBracketLeft:
-                i += 1
-                tag = syntax_tokens[i]
-                is_closing = tag.type == SyntaxTokenTypes.Slash;
-                if is_closing:
-                    i += 1
-                    tag = syntax_tokens[i]
-                if tag.type != SyntaxTokenTypes.Var and tag.type != SyntaxTokenTypes.Word:
-                    print("[ERROR] Next type should be a tag")
-                    quit()
-                if tag.type == SyntaxTokenTypes.Var:
-                    i += 1
-                    if is_closing:
-                        print("[ERROR] Variable declaration tag cannot be a closing one")
-                        quit()
-                    x = syntax_tokens[i]
-                    if x.type is not SyntaxTokenTypes.Word and x.literal != "name":
-                        print("[ERROR] Next token should be name")
-                        quit()
-                    i += 1
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.Assign:
-                        print("[ERROR] Expected a '=' at name")
-                        quit()
-                    i += 1
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.DoubleQuote:
-                        print("[ERROR] Expected a '\"' at name")
-                        quit()
-                    i += 1
-                    name = syntax_tokens[i]
-                    if name.type is not SyntaxTokenTypes.Word:
-                        print("[ERROR] Expected a identifier for the variable")
-                        quit() 
-                    i += 1
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.DoubleQuote:
-                        print("[ERROR] Expected a '\"' at value")
-                        quit()
-                    i += 1
-                    x = syntax_tokens[i]
-                    if x.type is not SyntaxTokenTypes.Word and x.literal != "value":
-                        print("[ERROR] Next token should be \"value\"")
-                        quit()
-                    i += 1    
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.Assign:
-                        print("[ERROR] Expected a '=' at name")
-                        quit()
-                    i += 1                
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.DoubleQuote:
-                        print("[ERROR] Expected a '\"'")
-                        quit()
-                    i += 1
-                    value = syntax_tokens[i]
-                    if value.type is not SyntaxTokenTypes.Word:
-                        print("[ERROR] Expected a value for the variable")
-                        quit() 
-                    i += 1
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.DoubleQuote:
-                        print("[ERROR] Expected a '\"'")
-                        quit()
-                    i += 1 
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.Slash:
-                        print("[ERROR] Expected a '/'")
-                        quit()
-                    i += 1     
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.AngleBracketRight:
-                        print("[ERROR] Expected a '>'")
-                        quit()
-                    tokens.append(Token(VariableAssign(name.literal, value.literal))) 
-                else:
-                    tag = syntax_tokens[i]
-                    i += 1
-                    props, i = parse_props(syntax_tokens, i) 
-                    if syntax_tokens[i].type is not SyntaxTokenTypes.AngleBracketRight:
-                        print("[ERROR] Expected a '>', got: '{}'".format(tag.literal))
-                        quit()
-                    if is_closing:
-                        tokens.append(Token(NativeTag(tag.literal, 1, props)))
+                    attr = " "
+                    for a in self.current_token().Tag.Attributes:
+                        attr += a.Name + a.Op + a.Value + " "
+                    html += "<{} {}>".format(self.current_token().Tag.Literal, attr)
+            case TokenType.Value:
+                html += self.current_token().Tag.Value
+            case TokenType.Let:
+                attributes = self.current_token().Tag.Attributes
+                allowed_attributes = ["name", "value"]
+                for a in attributes:
+                    if not a.Name in allowed_attributes:
+                        self.throw_error("The attribute with the name: {}, is not known in this context".format(a.Name))
+                if len(self.current_token().Tag.Attributes) == 2:
+                    if attributes[0].Value in self.variables:
+                        print("[ BEAU WARNING] Variable with the same name has already been created")
+                    # if not attributes[0].Value.isupper():
+                    #     self.throw_error("The variable name: {}, should be all uppercase".format(attributes[0].Value))
+                    self.variables[attributes[0].Value] = attributes[1].Value[1:-1]
+                elif len(attributes) == 1:
+                    if not attributes[0].Name == "name" and attributes[0].Value == "": 
+                        self.throw_error("You have a attribute without a name")
+                    if attributes[0].Value == "":
+                        self.throw_error("You called a variable with a name without any characters")
+                    elif not attributes[0].Value in self.variables:
+                        self.throw_error("You called '{}', but that does not exist".format(attributes[0].Value[1:-1]))
                     else:
-                        tokens.append(Token(NativeTag(tag.literal, 0, props)))
-            case SyntaxTokenTypes.Word:
-                tokens.append(Token(Value(syntax_tokens[i].literal, ValueType.String)))
-            case SyntaxTokenTypes.SquareBracketLeft:
-                i += 1
-                if syntax_tokens[i].type is not SyntaxTokenTypes.Word:
-                    print("[ERROR] Expected a variable name")
-                    quit()
-                name = syntax_tokens[i].literal
-                i += 1
-                if syntax_tokens[i].type is not SyntaxTokenTypes.SquareBracketRight:
-                    print("[ERROR] Expected a square right bracket")
-                    quit()
-                tokens.append(Token(VariableIndex(name)))
-            case _:
-                print("[ERROR] Character: '{}', is not supported in this context".format(current.literal))
-                quit()
-        i += 1
-    return tokens
-
-def tokenize_beau(input):
-    syntax_tokens = []
-    i = 0
-    while i < len(input):
-        char = input[i]
-        #print(char)
-        match char:
-            case '<':
-                if input[i + 1] == '>':
-                    syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, "<>"))
-                    i += 1
-                # THIS IS FOR CLOSING A TAG
-                # elif input[i + 1] == '/':
-                #     syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.ClosingSymbol, "</"))
-                #     i += 1
+                        html += self.variables[attributes[0].Value]
                 else:
-                    syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketLeft, char))
-            case '>':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.AngleBracketRight, char))
-            case '/':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Slash, char))
-            case '=':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Assign, char))  
-            case '-':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Dash, char))                   
-            case '"':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.DoubleQuote, char))    
-            case '[':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketLeft, char))
-            case ']':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SquareBracketRight, char))
-            case '.':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Dot, char))
-            case ':':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Colon, char))
-            case ';':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.SemiColon, char))
-            case '\\':
-                syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, "\\"))
-            case _:
-                if input[i] != " ":
-                    word = ""
-                    while input[i].isalnum() or input[i] == '_':
-                        word += input[i]
-                        if not input[i + 1].isalnum() and input[i + 1] != '_':
-                            break
-                        else:
-                            i += 1
-                    if word == "var":
-                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Var, word))
+                    self.throw_error("You have supplied: {} attributes, but '{}' can only take a max of 2".format(len(attributes), self.current_token().Tag.Literal))
+            case TokenType.If:
+                if self.current_token().Tag.attr_pos:
+                    attributes = self.current_token().Tag.Attributes
+                    allowed_attributes = ["left", "right", "op"]
+                    for a in attributes:
+                        if not a.Name in allowed_attributes:
+                            self.throw_error("The attribute with the name: {}, is not known in this context".format(a.Name))
+                    if not self.eval_comparison(int(self.current_token().Tag.Attributes[0].Value[1:-1]), self.current_token().Tag.Attributes[1].Value[1:-1], int(self.current_token().Tag.Attributes[2].Value[1:-1])):
+                        while True:
+                            self.next_token()
+                            if self.current_token().Type == TokenType.If:
+                                if not self.current_token().Tag.attr_pos:
+                                    self.current -= 1
+                                    break
                     else:
-                        syntax_tokens.append(SyntaxToken(SyntaxTokenTypes.Word, word))
-        i += 1
-    return syntax_tokens
+                        while True:
+                            self.next_token()
+                            if self.current_token().Type == TokenType.If:
+                                if not self.current_token().Tag.attr_pos:
+                                    self.current -= 1
+                                    break
+                            html += self.get_html_token()    
+        return html
+        
+    def eval_comparison(self, left: int, op: str, right: int):
+        print(left, op, right)
+        match op:
+            case 'equals':
+                return (left == right)
+            case 'greater':
+                return (left > right)
+            case 'smaller':
+                return (left < right)
+            case _:
+                self.throw_error("Operator chosen for comparison is not implemented")
+    
+    def throw_error(self, text):
+        print("[ BEAU ERROR] {}".format(text))
+        quit() 
+
+class Parser:
+    def __init__(self, input: str):
+        self.input: str = input
+        self.index: int = 0
+        self.current_char = self.input[self.index]
+        self.prev_char: str = ""
+
+    def next_character(self):
+        self.prev_char = self.current_char
+        self.index += 1
+        if self.index >= len(self.input): self.current_char = None
+        else: self.current_char = self.input[self.index]
+
+    def prev_character(self):
+        if self.index > 0: 
+            self.index -= 1
+        else: self.index = 0
+        self.current_char = self.input[self.index - 1]
+        self.prev_char = self.input[self.index - 2]
+
+    def parse(self):
+        syntax_tokens: list[Token] = []
+        current_literal: str = ""
+        while self.index < len(self.input):
+            current_literal = self.current_char
+            match self.current_char:
+                case '<':
+                    self.next_character()
+                    if self.current_char == '\\':       
+                        # ToDo: Fix this                                            
+                        current_literal += self.get_until(['<'])
+                        syntax_tokens.append(Token(TokenType.Value, Value(current_literal)))
+                    elif self.current_char == '/':                                                  
+                        current_literal = self.get_until(['>'])
+                        match current_literal:
+                            case "if": syntax_tokens.append(Token(TokenType.If, If(tag, False, [])))
+                            case "else": syntax_tokens.append(Token(TokenType.Else, Else(tag, False, [])))
+                            case _: syntax_tokens.append(Token(TokenType.Native, Native(current_literal[0:], False, [])))
+                    else:                                                                            
+                        current_literal = self.current_char + self.get_until(['/', '>']) 
+                        tag, index = self.get_tag(current_literal)
+                        attributes = self.get_attributes(current_literal[index:].strip())
+                        match tag:
+                            case "let": syntax_tokens.append(Token(TokenType.Let, Let(tag, attributes)))
+                            case "if": syntax_tokens.append(Token(TokenType.If, If(tag, True, attributes)))
+                            case "else": syntax_tokens.append(Token(TokenType.Else, Else(tag, True, attributes)))
+                            case _ : syntax_tokens.append(Token(TokenType.Native, Native(tag, True, attributes)))
+                case _:
+                    text = self.input[self.index - 1] + self.current_char + self.get_until(['<'])
+                    syntax_tokens.append(Token(TokenType.Value, Value(text)))  
+                    self.prev_character()   
+                    self.prev_character()      
+            self.next_character() 
+        return syntax_tokens
+
+    def get_until(self, chars: list[str]) -> str:
+        self.next_character()
+        string = ""
+        while not self.current_char in chars and self.current_char is not None:
+            string += self.current_char
+            self.next_character()
+        self.next_character()
+        return string
+
+    def get_attributes(self, prop_text):
+        props: list[Attr] = []
+        i = 0
+        while i < len(prop_text):
+            name = ""
+            while prop_text[i].isalnum():
+                name += prop_text[i]
+                i += 1
+            op = prop_text[i]
+            i += 1
+            value = ""
+            while i < len(prop_text):
+                value += prop_text[i]
+                i += 1
+                if prop_text[i] == "\"" or prop_text[i] == "'" :
+                    value += prop_text[i]
+                    break
+            n = None
+            v = None
+            if name.isupper(): n = Let("let", [("name", "=", name)])
+            else: n = name
+            if value.isupper(): v = Let("let", [("name", "=", value)])
+            else: v = value
+            props.append(Attr(n, v, op))
+            i += 2 # Do not know exacly why plus two is the thing, but it works
+        return props
+
+    def get_tag(self, literal: str):
+        word = ""
+        for index, char in enumerate(literal):
+            if char == ' ':
+                return word, index
+            else: word += char
+        return word, len(literal)
 
 def save_file(name, content):
     f = open(name, "w")
@@ -278,11 +250,13 @@ def main(filename: str):
     with open(filename, 'r') as file:
         input = file.read().rstrip()
 
-    syntax_tokens = tokenize_beau(input)
-    tags = parse_beau(syntax_tokens)
-
-    html = compile_to_html(tags)
-    save_file("index.html", html)
+    p = Parser(input)
+    result = p.parse()
+    # for r in result:
+    #     print(r)
+    c = Compiler(result)
+    save_file('./{}.html'.format(filename.split('.')[1]), c.compiler_to_html())
+    print("[SUCCES] Compiled to native html at: '.{}.html'".format(filename.split('.')[1]))
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -291,7 +265,6 @@ if __name__ == "__main__":
     elif len(sys.argv) > 2:
         print("[ERROR] You supplied too many arguments")
         print("[INFO] To execute type: 'py ./beau.py <FILENAME>. beau'")
-        webbrowser.open("https://stackoverflow.com/search?q=spaces+in+path&s=00765823-f25b-46bf-a749-53aed287d501")
     else:
         filename = sys.argv[1]
         if filename.split('.')[-1] != " beau":

@@ -1,8 +1,8 @@
 # Personal
 *. beau
 !example. beau
-index.html
-styles.css
+*.html
+*.css
 *.png
 
 __pycache__/
